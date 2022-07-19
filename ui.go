@@ -52,6 +52,19 @@ func genLayout(channel string) func(g *gocui.Gui) error {
 	}
 }
 
+func chatLogger(s string, g *gocui.Gui) {
+	g.Update(func(g *gocui.Gui) error {
+		v, err := g.View("chat")
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintln(v, s)
+
+		return nil
+	})
+}
+
 func quit(g *gocui.Gui, v *gocui.View) error {
 	return gocui.ErrQuit
 }
@@ -78,5 +91,6 @@ func chatSwitch(g *gocui.Gui, v *gocui.View) error {
 
 func entryClear(g *gocui.Gui, v *gocui.View) error {
 	v.Clear()
+
 	return nil
 }
