@@ -58,7 +58,7 @@ func main() {
 	mqttOpts.OnReconnecting = genOnRecconnectingHandler(g)
 
 	privMsgHandler := genPrivMsgHandler(g, opts.Channels, opts.ColourSeed)
-	rawMsgHandler := genRawMsgHandler(g)
+	rawMsgHandler := genRawMsgHandler(g, opts.Channels, opts.ColourSeed)
 	mqttOpts.OnConnect = createOnConnectHandler(g, opts.TopicRoot, opts.Channels, privMsgHandler, rawMsgHandler)
 
 	chatLogger("connecting to broker", g)
