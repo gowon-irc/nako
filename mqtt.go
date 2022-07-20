@@ -61,7 +61,9 @@ func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) fu
 			}
 		}
 
-		chatLogger(out.String(), g)
+		output := ircToAnsiColours(out.String())
+
+		chatLogger(output, g)
 	}
 }
 
