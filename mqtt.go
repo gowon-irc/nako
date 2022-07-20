@@ -65,17 +65,17 @@ func genRawMsgHandler(g *gocui.Gui) func(client mqtt.Client, msg mqtt.Message) {
 	}
 }
 
-func createOnConnectHandler(topicRoot string, channels []string, seed int, g *gocui.Gui) func(mqtt.Client) {
+func createOnConnectHandler(g *gocui.Gui, topicRoot string, pmh, rmh mqtt.MessageHandler) func(mqtt.Client) {
 	topic := topicRoot + "/input"
 	rawTopic := topicRoot + "/raw/input"
 
 	return func(client mqtt.Client) {
 		chatLogger("connected to broker", g)
 
-		client.Subscribe(topic, 0, genPrivMsgHandler(g, channels, seed))
+		client.Subscribe(topic, 0, pmh)
 		chatLogger(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", topic)), g)
 
-		client.Subscribe(rawTopic, 0, genRawMsgHandler(g))
+		client.Subscribe(rawTopic, 0, rmh)
 		chatLogger(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", rawTopic)), g)
 	}
 }
