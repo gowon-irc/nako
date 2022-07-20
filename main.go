@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"time"
 
@@ -20,7 +21,6 @@ const (
 type Options struct {
 	Broker     string   `short:"b" long:"broker" env:"NAKO_BROKER" default:"localhost:1883" description:"mqtt broker"`
 	TopicRoot  string   `short:"t" long:"topic-root" env:"NAKO_TOPIC_ROOT" default:"/gowon" description:"mqtt topic root"`
-	Module     string   `short:"m" long:"module" env:"NAKO_MODULE" default:"nako" description:"gowon module name"`
 	Channels   []string `short:"c" long:"channels" env:"NAKO_CHANNELS" env-delim:"," description:"Channels to watch"`
 	ShowJoins  bool     `short:"j" long:"show-joins" env:"NAKO_SHOW_JOINS" description:"Show join and part messages"`
 	ColourSeed string   `short:"x" long:"color-seed" env:"NAKO_COLOUR_SEED" default:"0,7" description:"Colour seed,bound"`
@@ -42,9 +42,12 @@ func main() {
 	g.Highlight = true
 	g.SetManagerFunc(genLayout(opts.Channels))
 
+	rand.Seed(time.Now().UnixNano())
+	clientId := "nako_" + fmt.Sprint(rand.Int())
+
 	mqttOpts := mqtt.NewClientOptions()
 	mqttOpts.AddBroker(fmt.Sprintf("tcp://%s", opts.Broker))
-	mqttOpts.SetClientID(opts.Module)
+	mqttOpts.SetClientID(clientId)
 	mqttOpts.SetConnectRetry(true)
 	mqttOpts.SetConnectRetryInterval(mqttConnectRetryInternal * time.Second)
 	mqttOpts.SetAutoReconnect(true)
@@ -78,7 +81,7 @@ func main() {
 			log.Panicln(err)
 		}
 
-		sendMessage := genSendMessage(c, opts.Module, opts.TopicRoot+"/output", opts.Channels[0])
+		sendMessage := genSendMessage(c, clientId, opts.TopicRoot+"/output", opts.Channels[0])
 		if err := g.SetKeybinding("entry", gocui.KeyEnter, gocui.ModNone, sendMessage); err != nil {
 			log.Panicln(err)
 		}

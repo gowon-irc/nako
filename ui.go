@@ -14,28 +14,14 @@ func genLayout(channels []string) func(g *gocui.Gui) error {
 	return func(g *gocui.Gui) error {
 		maxX, maxY := g.Size()
 
-		chatY := maxY
+		chatMaxY := maxY
+		initialView := "chat"
 
 		if len(channels) == 1 {
-			chatY = maxY - 2
+			chatMaxY = maxY - 2
+			initialView = "entry"
 
-			if v, err := g.SetView("entry", len(channels[0])+2, maxY-2, maxX, maxY, gocui.TOP); err != nil {
-				if !errors.Is(err, gocui.ErrUnknownView) {
-					return err
-				}
-
-				v.Frame = false
-				v.Editable = true
-				v.Wrap = true
-
-				if _, err := g.SetCurrentView("entry"); err != nil {
-					return err
-				}
-
-				g.Cursor = true
-			}
-
-			if v, err := g.SetView("channel", 0, maxY-2, len(channels[0])+2, maxY, gocui.TOP); err != nil {
+			if v, err := g.SetView("channel", 0, chatMaxY, len(channels[0])+2, maxY, gocui.TOP); err != nil {
 				if !errors.Is(err, gocui.ErrUnknownView) {
 					return err
 				}
@@ -45,9 +31,21 @@ func genLayout(channels []string) func(g *gocui.Gui) error {
 
 				fmt.Fprint(v, channels[0]+":")
 			}
+
+			if v, err := g.SetView("entry", len(channels[0])+2, chatMaxY, maxX, maxY, gocui.TOP); err != nil {
+				if !errors.Is(err, gocui.ErrUnknownView) {
+					return err
+				}
+
+				v.Frame = false
+				v.Editable = true
+				v.Wrap = true
+
+				g.Cursor = true
+			}
 		}
 
-		if v, err := g.SetView("chat", 0, 0, maxX, chatY, gocui.TOP); err != nil {
+		if v, err := g.SetView("chat", 0, 0, maxX, chatMaxY, gocui.TOP); err != nil {
 			if !errors.Is(err, gocui.ErrUnknownView) {
 				return err
 			}
@@ -55,6 +53,10 @@ func genLayout(channels []string) func(g *gocui.Gui) error {
 			v.Autoscroll = true
 			v.Wrap = true
 			v.Frame = false
+
+			if _, err := g.SetCurrentView(initialView); err != nil {
+				return err
+			}
 		}
 
 		return nil
