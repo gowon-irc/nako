@@ -38,6 +38,9 @@ func containsString(ss []string, s string) bool {
 func genPrivMsgHandler(g *gocui.Gui, channels []string) func(client mqtt.Client, msg mqtt.Message) {
 	return func(client mqtt.Client, msg mqtt.Message) {
 		m, err := gowon.CreateMessageStruct(msg.Payload())
+
+		out := fmt.Sprintf("%s: %s", m.Nick, m.Msg)
+
 		if err != nil {
 			chatLogger(err.Error(), g)
 			return
@@ -47,7 +50,7 @@ func genPrivMsgHandler(g *gocui.Gui, channels []string) func(client mqtt.Client,
 			return
 		}
 
-		chatLogger(m.Msg, g)
+		chatLogger(out, g)
 	}
 }
 

@@ -47,7 +47,7 @@ func genLayout(channels []string) func(g *gocui.Gui) error {
 			}
 		}
 
-		if v, err := g.SetView("chat", 0, 0, maxX, chatMaxY, gocui.TOP); err != nil {
+		if v, err := g.SetView("chat", 0, -1, maxX, chatMaxY, gocui.TOP); err != nil {
 			if !errors.Is(err, gocui.ErrUnknownView) {
 				return err
 			}
@@ -142,7 +142,7 @@ func genSendMessage(c mqtt.Client, module, topic, channel string) func(g *gocui.
 		}
 
 		c.Publish(topic, 0, false, mj)
-		chatLogger(v.Buffer(), g)
+		chatLogger("you: "+v.Buffer(), g)
 		v.Clear()
 
 		return nil
