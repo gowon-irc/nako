@@ -19,11 +19,12 @@ const (
 )
 
 type Options struct {
-	Broker     string   `short:"b" long:"broker" env:"NAKO_BROKER" default:"localhost:1883" description:"mqtt broker"`
-	TopicRoot  string   `short:"t" long:"topic-root" env:"NAKO_TOPIC_ROOT" default:"/gowon" description:"mqtt topic root"`
-	Channels   []string `short:"c" long:"channels" env:"NAKO_CHANNELS" env-delim:"," description:"Channels to watch"`
-	ShowJoins  bool     `short:"j" long:"show-joins" env:"NAKO_SHOW_JOINS" description:"Show join and part messages"`
-	ColourSeed string   `short:"x" long:"color-seed" env:"NAKO_COLOUR_SEED" default:"0,7" description:"Colour seed,bound"`
+	Broker      string   `short:"b" long:"broker" env:"NAKO_BROKER" default:"localhost:1883" description:"mqtt broker"`
+	TopicRoot   string   `short:"t" long:"topic-root" env:"NAKO_TOPIC_ROOT" default:"/gowon" description:"mqtt topic root"`
+	Channels    []string `short:"c" long:"channels" env:"NAKO_CHANNELS" env-delim:"," description:"Channels to watch"`
+	ShowJoins   bool     `short:"j" long:"show-joins" env:"NAKO_SHOW_JOINS" description:"Show join and part messages"`
+	ColourSeed  int      `short:"s" long:"color-seed" env:"NAKO_COLOUR_SEED" default:"0" description:"Colour seed"`
+	ColourBound int      `short:"B" long:"color-bound" env:"NAKO_COLOUR_BOUND" default:"7" description:"Color bound (0-n)"`
 }
 
 func main() {
@@ -55,7 +56,7 @@ func main() {
 	mqttOpts.DefaultPublishHandler = genDefaultPublishHandler(g)
 	mqttOpts.OnConnectionLost = genOnConnectionLostHandler(g)
 	mqttOpts.OnReconnecting = genOnRecconnectingHandler(g)
-	mqttOpts.OnConnect = createOnConnectHandler(opts.TopicRoot, opts.Channels, g)
+	mqttOpts.OnConnect = createOnConnectHandler(opts.TopicRoot, opts.Channels, opts.ColourSeed, g)
 
 	chatLogger("connecting to broker", g)
 
@@ -81,7 +82,7 @@ func main() {
 			log.Panicln(err)
 		}
 
-		sendMessage := genSendMessage(c, clientId, opts.TopicRoot+"/output", opts.Channels[0])
+		sendMessage := genSendMessage(c, clientId, opts.TopicRoot+"/output", opts.Channels[0], opts.ColourSeed)
 		if err := g.SetKeybinding("entry", gocui.KeyEnter, gocui.ModNone, sendMessage); err != nil {
 			log.Panicln(err)
 		}

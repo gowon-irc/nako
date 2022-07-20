@@ -6,6 +6,7 @@ import (
 	"github.com/awesome-gocui/gocui"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gowon-irc/go-gowon"
+	"github.com/logrusorgru/aurora"
 )
 
 func genDefaultPublishHandler(g *gocui.Gui) func(c mqtt.Client, msg mqtt.Message) {
@@ -35,11 +36,11 @@ func containsString(ss []string, s string) bool {
 	return false
 }
 
-func genPrivMsgHandler(g *gocui.Gui, channels []string) func(client mqtt.Client, msg mqtt.Message) {
+func genPrivMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqtt.Client, msg mqtt.Message) {
+	colorAllocator := genColorAllocator(seed)
+
 	return func(client mqtt.Client, msg mqtt.Message) {
 		m, err := gowon.CreateMessageStruct(msg.Payload())
-
-		out := fmt.Sprintf("%s: %s", m.Nick, m.Msg)
 
 		if err != nil {
 			chatLogger(err.Error(), g)
@@ -49,6 +50,9 @@ func genPrivMsgHandler(g *gocui.Gui, channels []string) func(client mqtt.Client,
 		if len(channels) > 0 && !containsString(channels, m.Dest) {
 			return
 		}
+
+		id := colorAllocator(m.Nick)
+		out := aurora.Index(id, fmt.Sprintf("%s: %s", m.Nick, m.Msg)).String()
 
 		chatLogger(out, g)
 	}
@@ -61,14 +65,14 @@ func genRawMsgHandler(g *gocui.Gui) func(client mqtt.Client, msg mqtt.Message) {
 	}
 }
 
-func createOnConnectHandler(topicRoot string, channels []string, g *gocui.Gui) func(mqtt.Client) {
+func createOnConnectHandler(topicRoot string, channels []string, seed int, g *gocui.Gui) func(mqtt.Client) {
 	topic := topicRoot + "/input"
 	rawTopic := topicRoot + "/raw/input"
 
 	return func(client mqtt.Client) {
 		chatLogger("connected to broker", g)
 
-		client.Subscribe(topic, 0, genPrivMsgHandler(g, channels))
+		client.Subscribe(topic, 0, genPrivMsgHandler(g, channels, seed))
 		chatLogger(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", topic)), g)
 
 		client.Subscribe(rawTopic, 0, genRawMsgHandler(g))

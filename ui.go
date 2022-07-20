@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/awesome-gocui/gocui"
@@ -123,7 +124,30 @@ func entryClear(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func genSendMessage(c mqtt.Client, module, topic, channel string) func(g *gocui.Gui, v *gocui.View) error {
+func genColorAllocator(seed int) func(s string) uint8 {
+	m := make(map[string]uint8)
+
+	return func(s string) uint8 {
+		v, p := m[s]
+		if p {
+			return v
+		}
+
+		sum := 0
+		for _, c := range s {
+			sum += int(c)
+		}
+
+		rand.Seed(int64(seed + sum))
+		id := uint8(rand.Intn(6) + 1)
+		m[s] = id
+		return id
+	}
+}
+
+func genSendMessage(c mqtt.Client, module, topic, channel string, seed int) func(g *gocui.Gui, v *gocui.View) error {
+	colorAllocator := genColorAllocator(seed)
+
 	return func(g *gocui.Gui, v *gocui.View) error {
 		if v.Buffer() == "" {
 			return nil
@@ -141,8 +165,11 @@ func genSendMessage(c mqtt.Client, module, topic, channel string) func(g *gocui.
 			return err
 		}
 
+		index := colorAllocator("you")
+		out := aurora.Index(index, "you: "+v.Buffer()).String()
+
 		c.Publish(topic, 0, false, mj)
-		chatLogger("you: "+v.Buffer(), g)
+		chatLogger(out, g)
 		v.Clear()
 
 		return nil
