@@ -40,7 +40,7 @@ func main() {
 	defer g.Close()
 
 	g.Highlight = true
-	g.SetManagerFunc(genLayout(opts.Channels[0]))
+	g.SetManagerFunc(genLayout(opts.Channels))
 
 	mqttOpts := mqtt.NewClientOptions()
 	mqttOpts.AddBroker(fmt.Sprintf("tcp://%s", opts.Broker))
@@ -65,21 +65,23 @@ func main() {
 		log.Panicln(err)
 	}
 
-	if err := g.SetKeybinding("chat", gocui.KeyTab, gocui.ModNone, entrySwitch); err != nil {
-		log.Panicln(err)
-	}
+	if len(opts.Channels) == 1 {
+		if err := g.SetKeybinding("chat", gocui.KeyTab, gocui.ModNone, entrySwitch); err != nil {
+			log.Panicln(err)
+		}
 
-	if err := g.SetKeybinding("entry", gocui.KeyTab, gocui.ModNone, chatSwitch); err != nil {
-		log.Panicln(err)
-	}
+		if err := g.SetKeybinding("entry", gocui.KeyTab, gocui.ModNone, chatSwitch); err != nil {
+			log.Panicln(err)
+		}
 
-	if err := g.SetKeybinding("entry", gocui.KeyCtrlU, gocui.ModNone, entryClear); err != nil {
-		log.Panicln(err)
-	}
+		if err := g.SetKeybinding("entry", gocui.KeyCtrlU, gocui.ModNone, entryClear); err != nil {
+			log.Panicln(err)
+		}
 
-	sendMessage := genSendMessage(c, opts.Module, opts.TopicRoot+"/output", opts.Channels[0])
-	if err := g.SetKeybinding("entry", gocui.KeyEnter, gocui.ModNone, sendMessage); err != nil {
-		log.Panicln(err)
+		sendMessage := genSendMessage(c, opts.Module, opts.TopicRoot+"/output", opts.Channels[0])
+		if err := g.SetKeybinding("entry", gocui.KeyEnter, gocui.ModNone, sendMessage); err != nil {
+			log.Panicln(err)
+		}
 	}
 
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {

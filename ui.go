@@ -10,11 +10,44 @@ import (
 	"github.com/gowon-irc/go-gowon"
 )
 
-func genLayout(channel string) func(g *gocui.Gui) error {
+func genLayout(channels []string) func(g *gocui.Gui) error {
 	return func(g *gocui.Gui) error {
 		maxX, maxY := g.Size()
 
-		if v, err := g.SetView("chat", 0, 0, maxX, maxY-2, gocui.TOP); err != nil {
+		chatY := maxY
+
+		if len(channels) == 1 {
+			chatY = maxY - 2
+
+			if v, err := g.SetView("entry", len(channels[0])+2, maxY-2, maxX, maxY, gocui.TOP); err != nil {
+				if !errors.Is(err, gocui.ErrUnknownView) {
+					return err
+				}
+
+				v.Frame = false
+				v.Editable = true
+				v.Wrap = true
+
+				if _, err := g.SetCurrentView("entry"); err != nil {
+					return err
+				}
+
+				g.Cursor = true
+			}
+
+			if v, err := g.SetView("channel", 0, maxY-2, len(channels[0])+2, maxY, gocui.TOP); err != nil {
+				if !errors.Is(err, gocui.ErrUnknownView) {
+					return err
+				}
+
+				v.Frame = false
+				v.FgColor = gocui.ColorGreen
+
+				fmt.Fprint(v, channels[0]+":")
+			}
+		}
+
+		if v, err := g.SetView("chat", 0, 0, maxX, chatY, gocui.TOP); err != nil {
 			if !errors.Is(err, gocui.ErrUnknownView) {
 				return err
 			}
@@ -22,33 +55,6 @@ func genLayout(channel string) func(g *gocui.Gui) error {
 			v.Autoscroll = true
 			v.Wrap = true
 			v.Frame = false
-		}
-
-		if v, err := g.SetView("channel", 0, maxY-2, len(channel)+2, maxY, gocui.TOP); err != nil {
-			if !errors.Is(err, gocui.ErrUnknownView) {
-				return err
-			}
-
-			v.Frame = false
-			v.FgColor = gocui.ColorGreen
-
-			fmt.Fprint(v, channel+":")
-		}
-
-		if v, err := g.SetView("entry", len(channel)+2, maxY-2, maxX, maxY, gocui.TOP); err != nil {
-			if !errors.Is(err, gocui.ErrUnknownView) {
-				return err
-			}
-
-			v.Frame = false
-			v.Editable = true
-			v.Wrap = true
-
-			if _, err := g.SetCurrentView("entry"); err != nil {
-				return err
-			}
-
-			g.Cursor = true
 		}
 
 		return nil
