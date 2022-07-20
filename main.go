@@ -77,6 +77,11 @@ func main() {
 		log.Panicln(err)
 	}
 
+	sendMessage := genSendMessage(c, opts.Module, opts.TopicRoot+"/output", opts.Channels[0])
+	if err := g.SetKeybinding("entry", gocui.KeyEnter, gocui.ModNone, sendMessage); err != nil {
+		log.Panicln(err)
+	}
+
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}

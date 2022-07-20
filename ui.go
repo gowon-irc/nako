@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/awesome-gocui/gocui"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/gowon-irc/go-gowon"
 )
 
 func genLayout(channel string) func(g *gocui.Gui) error {
@@ -52,7 +55,7 @@ func genLayout(channel string) func(g *gocui.Gui) error {
 	}
 }
 
-func chatLogger(s string, g *gocui.Gui) {
+func chatLogger(s string, g *gocui.Gui, date ...string) {
 	g.Update(func(g *gocui.Gui) error {
 		v, err := g.View("chat")
 		if err != nil {
@@ -93,4 +96,30 @@ func entryClear(g *gocui.Gui, v *gocui.View) error {
 	v.Clear()
 
 	return nil
+}
+
+func genSendMessage(c mqtt.Client, module, topic, channel string) func(g *gocui.Gui, v *gocui.View) error {
+	return func(g *gocui.Gui, v *gocui.View) error {
+		if v.Buffer() == "" {
+			return nil
+		}
+
+		m := &gowon.Message{
+			Module: module,
+			Dest:   channel,
+			Msg:    v.Buffer() + " ",
+		}
+
+		mj, err := json.Marshal(m)
+		if err != nil {
+			chatLogger(err.Error(), g)
+			return err
+		}
+
+		c.Publish(topic, 0, false, mj)
+		chatLogger(v.Buffer(), g)
+		v.Clear()
+
+		return nil
+	}
 }
