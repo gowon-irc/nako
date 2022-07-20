@@ -26,12 +26,24 @@ func genOnRecconnectingHandler(g *gocui.Gui) func(c mqtt.Client, opts *mqtt.Clie
 	}
 }
 
-func genPrivMsgHandler(g *gocui.Gui) func(client mqtt.Client, msg mqtt.Message) {
+func containsString(ss []string, s string) bool {
+	for _, i := range ss {
+		if i == s {
+			return true
+		}
+	}
+	return false
+}
+
+func genPrivMsgHandler(g *gocui.Gui, channels []string) func(client mqtt.Client, msg mqtt.Message) {
 	return func(client mqtt.Client, msg mqtt.Message) {
 		m, err := gowon.CreateMessageStruct(msg.Payload())
 		if err != nil {
 			chatLogger(err.Error(), g)
+			return
+		}
 
+		if len(channels) > 0 && !containsString(channels, m.Dest) {
 			return
 		}
 
@@ -41,20 +53,19 @@ func genPrivMsgHandler(g *gocui.Gui) func(client mqtt.Client, msg mqtt.Message) 
 
 func genRawMsgHandler(g *gocui.Gui) func(client mqtt.Client, msg mqtt.Message) {
 	return func(client mqtt.Client, msg mqtt.Message) {
-		m, _ := gowon.CreateMessageStruct(msg.Payload())
-
-		chatLogger(m.Raw, g)
+		return
+		// chatLogger(string(msg.Payload()), g)
 	}
 }
 
-func createOnConnectHandler(topicRoot string, g *gocui.Gui) func(mqtt.Client) {
+func createOnConnectHandler(topicRoot string, channels []string, g *gocui.Gui) func(mqtt.Client) {
 	topic := topicRoot + "/input"
 	rawTopic := topicRoot + "/raw/input"
 
 	return func(client mqtt.Client) {
 		chatLogger("connected to broker", g)
 
-		client.Subscribe(topic, 0, genPrivMsgHandler(g))
+		client.Subscribe(topic, 0, genPrivMsgHandler(g, channels))
 		chatLogger(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", topic)), g)
 
 		client.Subscribe(rawTopic, 0, genRawMsgHandler(g))

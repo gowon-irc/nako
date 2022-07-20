@@ -52,7 +52,7 @@ func main() {
 	mqttOpts.DefaultPublishHandler = genDefaultPublishHandler(g)
 	mqttOpts.OnConnectionLost = genOnConnectionLostHandler(g)
 	mqttOpts.OnReconnecting = genOnRecconnectingHandler(g)
-	mqttOpts.OnConnect = createOnConnectHandler(opts.TopicRoot, g)
+	mqttOpts.OnConnect = createOnConnectHandler(opts.TopicRoot, opts.Channels, g)
 
 	chatLogger("connecting to broker", g)
 
