@@ -89,6 +89,24 @@ func genRawMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqt
 			chatLogger(out, g)
 			return
 		}
+
+		if m.Code == "332" {
+			if len(channels) > 0 && !containsString(channels, m.Arguments[1]) {
+				return
+			}
+
+			out := fmt.Sprintf("topic for %s is: \"%s\"", m.Arguments[1], m.Arguments[2])
+			chatLogger(out, g)
+		}
+
+		if m.Code == "353" {
+			if len(channels) > 0 && !containsString(channels, m.Arguments[2]) {
+				return
+			}
+
+			out := fmt.Sprintf("In %s are: %s", m.Arguments[2], strings.Join(m.Arguments[3:], " "))
+			chatLogger(out, g)
+		}
 	}
 }
 
@@ -107,5 +125,10 @@ func createOnConnectHandler(g *gocui.Gui, topicRoot string, channels []string, p
 		chatLogger(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", rawInputTopic)), g)
 
 		client.Publish(rawOutputTopic, 0, false, fmt.Sprintf("JOIN %s", strings.Join(channels, ",")))
+
+		for _, c := range channels {
+			client.Publish(rawOutputTopic, 0, false, fmt.Sprintf("TOPIC %s", c))
+			client.Publish(rawOutputTopic, 0, false, fmt.Sprintf("NAMES %s", c))
+		}
 	}
 }
