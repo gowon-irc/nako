@@ -37,7 +37,7 @@ func containsString(ss []string, s string) bool {
 	return false
 }
 
-func genPrivMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqtt.Client, msg mqtt.Message) {
+func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) func(client mqtt.Client, msg mqtt.Message) {
 	colorAllocator := genColorAllocator(seed)
 
 	return func(client mqtt.Client, msg mqtt.Message) {
@@ -53,9 +53,15 @@ func genPrivMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mq
 		}
 
 		id := colorAllocator(m.Nick)
-		out := aurora.Index(id, fmt.Sprintf("%s: %s", m.Nick, m.Msg)).String()
+		out := aurora.Index(id, fmt.Sprintf("%s: %s", m.Nick, m.Msg))
 
-		chatLogger(out, g)
+		for _, h := range highlights {
+			if strings.Contains(m.Msg, h) {
+				out = out.Black().BgIndex(id)
+			}
+		}
+
+		chatLogger(out.String(), g)
 	}
 }
 

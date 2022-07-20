@@ -22,6 +22,7 @@ type Options struct {
 	Broker      string   `short:"b" long:"broker" env:"NAKO_BROKER" default:"localhost:1883" description:"mqtt broker"`
 	TopicRoot   string   `short:"t" long:"topic-root" env:"NAKO_TOPIC_ROOT" default:"/gowon" description:"mqtt topic root"`
 	Channels    []string `short:"c" long:"channels" env:"NAKO_CHANNELS" env-delim:"," description:"Channels to watch"`
+	Highlights  []string `short:"H" long:"highlights" env:"NAKO_HIGHLIGHTS" env-delim:"," description:"Words to highlight"`
 	ShowJoins   bool     `short:"j" long:"show-joins" env:"NAKO_SHOW_JOINS" description:"Show join and part messages"`
 	ColourSeed  int      `short:"s" long:"color-seed" env:"NAKO_COLOUR_SEED" default:"0" description:"Colour seed"`
 	ColourBound int      `short:"B" long:"color-bound" env:"NAKO_COLOUR_BOUND" default:"7" description:"Color bound (0-n)"`
@@ -57,7 +58,7 @@ func main() {
 	mqttOpts.OnConnectionLost = genOnConnectionLostHandler(g)
 	mqttOpts.OnReconnecting = genOnRecconnectingHandler(g)
 
-	privMsgHandler := genPrivMsgHandler(g, opts.Channels, opts.ColourSeed)
+	privMsgHandler := genPrivMsgHandler(g, opts.Channels, opts.Highlights, opts.ColourSeed)
 	rawMsgHandler := genRawMsgHandler(g, opts.Channels, opts.ColourSeed)
 	mqttOpts.OnConnect = createOnConnectHandler(g, opts.TopicRoot, opts.Channels, privMsgHandler, rawMsgHandler)
 
