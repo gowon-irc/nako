@@ -59,7 +59,7 @@ func main() {
 
 	privMsgHandler := genPrivMsgHandler(g, opts.Channels, opts.ColourSeed)
 	rawMsgHandler := genRawMsgHandler(g)
-	mqttOpts.OnConnect = createOnConnectHandler(g, opts.TopicRoot, privMsgHandler, rawMsgHandler)
+	mqttOpts.OnConnect = createOnConnectHandler(g, opts.TopicRoot, opts.Channels, privMsgHandler, rawMsgHandler)
 
 	chatLogger("connecting to broker", g)
 

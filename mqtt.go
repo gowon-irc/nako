@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/awesome-gocui/gocui"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -65,17 +66,20 @@ func genRawMsgHandler(g *gocui.Gui) func(client mqtt.Client, msg mqtt.Message) {
 	}
 }
 
-func createOnConnectHandler(g *gocui.Gui, topicRoot string, pmh, rmh mqtt.MessageHandler) func(mqtt.Client) {
-	topic := topicRoot + "/input"
-	rawTopic := topicRoot + "/raw/input"
+func createOnConnectHandler(g *gocui.Gui, topicRoot string, channels []string, pmh, rmh mqtt.MessageHandler) func(mqtt.Client) {
+	inputTopic := topicRoot + "/input"
+	rawInputTopic := topicRoot + "/raw/input"
+	rawOutputTopic := topicRoot + "/raw/output"
 
 	return func(client mqtt.Client) {
 		chatLogger("connected to broker", g)
 
-		client.Subscribe(topic, 0, pmh)
-		chatLogger(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", topic)), g)
+		client.Subscribe(inputTopic, 0, pmh)
+		chatLogger(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", inputTopic)), g)
 
-		client.Subscribe(rawTopic, 0, rmh)
-		chatLogger(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", rawTopic)), g)
+		client.Subscribe(rawInputTopic, 0, rmh)
+		chatLogger(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", rawInputTopic)), g)
+
+		client.Publish(rawOutputTopic, 0, false, fmt.Sprintf("JOIN %s", strings.Join(channels, ",")))
 	}
 }
