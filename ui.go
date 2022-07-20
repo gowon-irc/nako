@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/awesome-gocui/gocui"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gowon-irc/go-gowon"
+	"github.com/logrusorgru/aurora"
 )
 
 func genLayout(channels []string) func(g *gocui.Gui) error {
@@ -63,14 +65,29 @@ func genLayout(channels []string) func(g *gocui.Gui) error {
 	}
 }
 
-func chatLogger(s string, g *gocui.Gui, date ...string) {
+func getTime() string {
+	t := time.Now()
+	ft := t.Format("15:04")
+
+	return aurora.Bold(ft).String()
+}
+
+func chatLogger(s string, g *gocui.Gui, time ...string) {
+	var t string
+
+	if len(time) == 0 {
+		t = getTime()
+	} else {
+		t = time[0]
+	}
+
 	g.Update(func(g *gocui.Gui) error {
 		v, err := g.View("chat")
 		if err != nil {
 			return err
 		}
 
-		fmt.Fprintln(v, s)
+		fmt.Fprintln(v, t, s)
 
 		return nil
 	})
