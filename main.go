@@ -85,7 +85,7 @@ func main() {
 			log.Panicln(err)
 		}
 
-		sendMessage := genSendMessage(c, clientId, opts.TopicRoot+"/output", opts.Channels[0], opts.ColourSeed)
+		sendMessage := genSendMessage(c, clientId, opts.TopicRoot, opts.Channels[0])
 		if err := g.SetKeybinding("entry", gocui.KeyEnter, gocui.ModNone, sendMessage); err != nil {
 			log.Panicln(err)
 		}

@@ -79,6 +79,7 @@ func genRawMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqt
 
 			out := aurora.Index(id, fmt.Sprintf("-> %s joined %s", m.Nick, m.Arguments[0])).String()
 			chatLogger(out, g)
+			return
 		}
 	}
 }

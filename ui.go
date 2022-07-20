@@ -145,8 +145,9 @@ func genColorAllocator(seed int) func(s string) uint8 {
 	}
 }
 
-func genSendMessage(c mqtt.Client, module, topic, channel string, seed int) func(g *gocui.Gui, v *gocui.View) error {
-	colorAllocator := genColorAllocator(seed)
+func genSendMessage(c mqtt.Client, module, topicRoot, channel string) func(g *gocui.Gui, v *gocui.View) error {
+	inputTopic := topicRoot + "/input"
+	outputTopic := topicRoot + "/output"
 
 	return func(g *gocui.Gui, v *gocui.View) error {
 		if v.Buffer() == "" {
@@ -155,8 +156,9 @@ func genSendMessage(c mqtt.Client, module, topic, channel string, seed int) func
 
 		m := &gowon.Message{
 			Module: module,
+			Nick:   "you",
 			Dest:   channel,
-			Msg:    v.Buffer() + " ",
+			Msg:    v.Buffer(),
 		}
 
 		mj, err := json.Marshal(m)
@@ -165,11 +167,8 @@ func genSendMessage(c mqtt.Client, module, topic, channel string, seed int) func
 			return err
 		}
 
-		index := colorAllocator("you")
-		out := aurora.Index(index, "you: "+v.Buffer()).String()
-
-		c.Publish(topic, 0, false, mj)
-		chatLogger(out, g)
+		c.Publish(inputTopic, 0, false, mj)
+		c.Publish(outputTopic, 0, false, mj)
 		v.Clear()
 
 		return nil
