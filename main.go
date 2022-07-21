@@ -92,11 +92,19 @@ func main() {
 		}
 	}
 
-	if err := g.SetKeybinding("chat", 'j', gocui.ModNone, scrollUp); err != nil {
+	if err := g.SetKeybinding("chat", 'j', gocui.ModNone, genScrollX(1)); err != nil {
 		log.Panicln(err)
 	}
 
-	if err := g.SetKeybinding("chat", 'k', gocui.ModNone, scrollDown); err != nil {
+	if err := g.SetKeybinding("chat", 'k', gocui.ModNone, genScrollX(-1)); err != nil {
+		log.Panicln(err)
+	}
+
+	if err := g.SetKeybinding("chat", 'J', gocui.ModNone, genScrollX(10)); err != nil {
+		log.Panicln(err)
+	}
+
+	if err := g.SetKeybinding("chat", 'K', gocui.ModNone, genScrollX(-10)); err != nil {
 		log.Panicln(err)
 	}
 
