@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/awesome-gocui/gocui"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -63,7 +64,22 @@ func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) fu
 
 		output := ircToAnsiColours(out.String())
 
-		chatLogger(output, g)
+		serverTime := m.Tags["time"]
+
+		if serverTime == "" {
+			chatLogger(output, g)
+			return
+		}
+
+		t, err := time.Parse("2006-01-02T15:04:05.000Z", serverTime)
+		if err != nil {
+			chatLogger(output, g)
+			return
+		}
+
+		ft := aurora.Bold(t.Format("15:04")).String()
+
+		chatLogger(output, g, ft)
 	}
 }
 
