@@ -77,9 +77,7 @@ func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) fu
 			return
 		}
 
-		ft := aurora.Bold(t.Format("15:04")).String()
-
-		chatLogger(output, g, ft)
+		chatLogger(output, g, t.Format("15:04"))
 	}
 }
 

@@ -67,21 +67,17 @@ func genLayout(channels []string) func(g *gocui.Gui) error {
 	}
 }
 
-func getTime() string {
-	t := time.Now()
-	ft := t.Format("15:04")
-
-	return aurora.Bold(ft).String()
-}
-
-func chatLogger(s string, g *gocui.Gui, time ...string) {
+func chatLogger(s string, g *gocui.Gui, tt ...string) {
 	var t string
 
-	if len(time) == 0 {
-		t = getTime()
+	if len(tt) == 0 {
+		now := time.Now()
+		t = now.Format("15:04")
 	} else {
-		t = time[0]
+		t = tt[0]
 	}
+
+	ft := aurora.Bold(t).String()
 
 	g.Update(func(g *gocui.Gui) error {
 		v, err := g.View("chat")
@@ -89,7 +85,7 @@ func chatLogger(s string, g *gocui.Gui, time ...string) {
 			return err
 		}
 
-		fmt.Fprintln(v, t, s)
+		fmt.Fprintln(v, ft, s)
 
 		return nil
 	})
