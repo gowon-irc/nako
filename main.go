@@ -92,6 +92,14 @@ func main() {
 		}
 	}
 
+	if err := g.SetKeybinding("chat", 'j', gocui.ModNone, scrollUp); err != nil {
+		log.Panicln(err)
+	}
+
+	if err := g.SetKeybinding("chat", 'k', gocui.ModNone, scrollDown); err != nil {
+		log.Panicln(err)
+	}
+
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}

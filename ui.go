@@ -205,3 +205,48 @@ func genSendMessage(c mqtt.Client, module, topicRoot, channel string) func(g *go
 		return nil
 	}
 }
+
+func scrollX(v *gocui.View, y int) error {
+	ox, oy := v.Origin()
+	ny := oy + y
+
+	// if we have reached the bottom, don't scroll down
+	if ny < 0 {
+		return nil
+	}
+
+	_, h := v.Size()
+	lh := v.LinesHeight()
+
+	// if we have less lines than the view holds, don't scroll
+	if lh < h {
+		return nil
+	}
+
+	// if the last line is visible, don't scroll up
+	if (h + ny) >= lh {
+		v.Autoscroll = true
+		return nil
+	}
+
+	v.Autoscroll = false
+	if err := v.SetOrigin(ox, oy+y); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func scrollUp(g *gocui.Gui, v *gocui.View) error {
+	if err := scrollX(v, 1); err != nil {
+		return err
+	}
+	return nil
+}
+
+func scrollDown(g *gocui.Gui, v *gocui.View) error {
+	if err := scrollX(v, -1); err != nil {
+		return err
+	}
+	return nil
+}
