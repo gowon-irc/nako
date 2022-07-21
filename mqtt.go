@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/awesome-gocui/gocui"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -39,7 +40,7 @@ func containsString(ss []string, s string) bool {
 }
 
 func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) func(client mqtt.Client, msg mqtt.Message) {
-	colorAllocator := genColorAllocator(seed)
+	colourAllocator := genColourAllocator(seed)
 
 	return func(client mqtt.Client, msg mqtt.Message) {
 		m, err := gowon.CreateMessageStruct(msg.Payload())
@@ -53,7 +54,7 @@ func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) fu
 			return
 		}
 
-		id := colorAllocator(m.Nick)
+		id := colourAllocator(m.Nick)
 		out := aurora.Index(id, fmt.Sprintf("%s: %s", m.Nick, m.Msg))
 
 		for _, h := range highlights {
@@ -81,8 +82,24 @@ func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) fu
 	}
 }
 
+func colourNamesList(names string, colourAllocator func(s string) uint8) string {
+	namesList := strings.Split(names, " ")
+	colouredNames := []string{}
+
+	for _, name := range namesList {
+		sanitisedNick := strings.TrimLeftFunc(name, func(r rune) bool {
+			return !unicode.IsLetter(r)
+		})
+		index := colourAllocator(sanitisedNick)
+		colouredName := aurora.Index(index, name).String()
+		colouredNames = append(colouredNames, colouredName)
+	}
+
+	return strings.Join(colouredNames, " ")
+}
+
 func genRawMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqtt.Client, msg mqtt.Message) {
-	colorAllocator := genColorAllocator(seed)
+	colourAllocator := genColourAllocator(seed)
 
 	return func(client mqtt.Client, msg mqtt.Message) {
 		m, err := gowon.CreateMessageStruct(msg.Payload())
@@ -92,7 +109,7 @@ func genRawMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqt
 			return
 		}
 
-		id := colorAllocator(m.Nick)
+		id := colourAllocator(m.Nick)
 
 		if m.Code == "JOIN" {
 			if len(channels) > 0 && !containsString(channels, m.Arguments[0]) {
@@ -118,7 +135,7 @@ func genRawMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqt
 				return
 			}
 
-			out := fmt.Sprintf("In %s are: %s", m.Arguments[2], strings.Join(m.Arguments[3:], " "))
+			out := fmt.Sprintf("In %s are: %s", m.Arguments[2], colourNamesList(m.Arguments[3], colourAllocator))
 			chatLogger(out, g)
 		}
 	}

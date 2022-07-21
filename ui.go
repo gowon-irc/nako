@@ -121,7 +121,7 @@ func entryClear(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func genColorAllocator(seed int) func(s string) uint8 {
+func genColourAllocator(seed int) func(s string) uint8 {
 	m := make(map[string]uint8)
 
 	return func(s string) uint8 {
