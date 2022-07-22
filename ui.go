@@ -175,17 +175,45 @@ func ircToAnsiColours(s string) string {
 func genSendMessage(c mqtt.Client, module, topicRoot, channel string) func(g *gocui.Gui, v *gocui.View) error {
 	inputTopic := topicRoot + "/input"
 	outputTopic := topicRoot + "/output"
+	rawOutputTopic := topicRoot + "/raw/output"
 
 	return func(g *gocui.Gui, v *gocui.View) error {
-		if v.Buffer() == "" {
+		b := v.Buffer()
+
+		if b == "" {
 			return nil
+		}
+
+		v.Clear()
+
+		if strings.HasPrefix(b, "/ch") || strings.HasPrefix(b, "/chatlog") {
+			c.Publish(rawOutputTopic, 0, false, fmt.Sprintf("CHATHISTORY LATEST %s * 10", channel))
+			return nil
+		}
+
+		if strings.HasPrefix(b, "/t") || strings.HasPrefix(b, "/topic") {
+			c.Publish(rawOutputTopic, 0, false, fmt.Sprintf("TOPIC %s", channel))
+			return nil
+		}
+
+		if strings.HasPrefix(b, "/n") || strings.HasPrefix(b, "/names") {
+			c.Publish(rawOutputTopic, 0, false, fmt.Sprintf("NAMES %s", channel))
+			return nil
+		}
+
+		if strings.HasPrefix(b, "/") {
+			if !strings.HasPrefix(b, "//") {
+				chatLogger("command not recognised", g)
+				return nil
+			}
+			b = strings.TrimPrefix(b, "/")
 		}
 
 		m := &gowon.Message{
 			Module: module,
 			Nick:   "you",
 			Dest:   channel,
-			Msg:    v.Buffer(),
+			Msg:    b,
 		}
 
 		mj, err := json.Marshal(m)
