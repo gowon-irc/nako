@@ -226,6 +226,21 @@ func genSendMessage(c mqtt.Client, module, topicRoot, channel string) func(g *go
 			return nil
 		}
 
+		if command == "c" || command == "clear" {
+			g.Update(func(g *gocui.Gui) error {
+				vc, err := g.View("chat")
+				if err != nil {
+					return err
+				}
+
+				vc.Clear()
+
+				return nil
+			})
+
+			return nil
+		}
+
 		if strings.HasPrefix(b, "/") {
 			if !strings.HasPrefix(b, "//") {
 				chatLogger("command not recognised", g)
