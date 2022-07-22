@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 
@@ -172,6 +173,22 @@ func ircToAnsiColours(s string) string {
 	return out
 }
 
+func getCommand(s string) (command string, args []string) {
+	if !strings.HasPrefix(s, "/") {
+		return "", []string{}
+	}
+
+	fields := strings.Fields(s)
+	command = strings.TrimPrefix(fields[0], "/")
+
+	return command, fields[1:]
+}
+
+func stringIsNumber(s string) bool {
+	_, err := strconv.Atoi(s)
+	return err == nil
+}
+
 func genSendMessage(c mqtt.Client, module, topicRoot, channel string) func(g *gocui.Gui, v *gocui.View) error {
 	inputTopic := topicRoot + "/input"
 	outputTopic := topicRoot + "/output"
@@ -186,17 +203,25 @@ func genSendMessage(c mqtt.Client, module, topicRoot, channel string) func(g *go
 
 		v.Clear()
 
-		if strings.HasPrefix(b, "/ch") || strings.HasPrefix(b, "/chatlog") {
-			c.Publish(rawOutputTopic, 0, false, fmt.Sprintf("CHATHISTORY LATEST %s * 10", channel))
+		command, args := getCommand(b)
+
+		if command == "ch" || command == "chatlog" {
+			hl := "10"
+
+			if len(args) > 0 && stringIsNumber(args[0]) {
+				hl = args[0]
+			}
+
+			c.Publish(rawOutputTopic, 0, false, fmt.Sprintf("CHATHISTORY LATEST %s * %s", channel, hl))
 			return nil
 		}
 
-		if strings.HasPrefix(b, "/t") || strings.HasPrefix(b, "/topic") {
+		if command == "t" || command == "topic" {
 			c.Publish(rawOutputTopic, 0, false, fmt.Sprintf("TOPIC %s", channel))
 			return nil
 		}
 
-		if strings.HasPrefix(b, "/n") || strings.HasPrefix(b, "/names") {
+		if command == "n" || command == "names" {
 			c.Publish(rawOutputTopic, 0, false, fmt.Sprintf("NAMES %s", channel))
 			return nil
 		}
