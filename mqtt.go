@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 	"unicode"
@@ -82,8 +83,34 @@ func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) fu
 	}
 }
 
+func prefixValue(name string) int {
+	prefixMap := map[byte]int{
+		'~': 5,
+		'&': 4,
+		'@': 3,
+		'%': 2,
+		'+': 1,
+	}
+
+	v := prefixMap[name[0]]
+
+	return v
+}
+
 func colourNamesList(names string, colourAllocator func(s string) uint8) string {
-	namesList := strings.Split(names, " ")
+	namesList := strings.Fields(names)
+
+	sort.Slice(namesList, func(i, j int) bool {
+		n1, n2 := namesList[i], namesList[j]
+		pv1, pv2 := prefixValue(n1), prefixValue(n2)
+
+		if pv1 == pv2 {
+			return n1 < n2
+		}
+
+		return pv1 > pv2
+	})
+
 	colouredNames := []string{}
 
 	for _, name := range namesList {
