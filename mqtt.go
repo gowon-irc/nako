@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/awesome-gocui/gocui"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -29,15 +27,6 @@ func genOnRecconnectingHandler(g *gocui.Gui) func(c mqtt.Client, opts *mqtt.Clie
 	return func(c mqtt.Client, opts *mqtt.ClientOptions) {
 		chatLogger("attempting to reconnect to broker", g)
 	}
-}
-
-func containsString(ss []string, s string) bool {
-	for _, i := range ss {
-		if i == s {
-			return true
-		}
-	}
-	return false
 }
 
 func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) func(client mqtt.Client, msg mqtt.Message) {
@@ -81,48 +70,6 @@ func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) fu
 
 		chatLogger(output, g, t.Format("15:04"))
 	}
-}
-
-func prefixValue(name string) int {
-	prefixMap := map[byte]int{
-		'~': 5,
-		'&': 4,
-		'@': 3,
-		'%': 2,
-		'+': 1,
-	}
-
-	v := prefixMap[name[0]]
-
-	return v
-}
-
-func colourNamesList(names string, colourAllocator func(s string) uint8) string {
-	namesList := strings.Fields(names)
-
-	sort.Slice(namesList, func(i, j int) bool {
-		n1, n2 := namesList[i], namesList[j]
-		pv1, pv2 := prefixValue(n1), prefixValue(n2)
-
-		if pv1 == pv2 {
-			return n1 < n2
-		}
-
-		return pv1 > pv2
-	})
-
-	colouredNames := []string{}
-
-	for _, name := range namesList {
-		sanitisedNick := strings.TrimLeftFunc(name, func(r rune) bool {
-			return !unicode.IsLetter(r)
-		})
-		index := colourAllocator(sanitisedNick)
-		colouredName := aurora.Index(index, name).String()
-		colouredNames = append(colouredNames, colouredName)
-	}
-
-	return strings.Join(colouredNames, " ")
 }
 
 func genRawMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqtt.Client, msg mqtt.Message) {
