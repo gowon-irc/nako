@@ -51,7 +51,7 @@ func sortNamesList(names []string) []string {
 	return nc
 }
 
-func colourNamesList(names string, colourAllocator func(s string) uint8) string {
+func colourNamesList(names string, ca *colourAllocator) string {
 	namesList := sortNamesList(strings.Fields(names))
 
 	colouredNames := []string{}
@@ -60,7 +60,7 @@ func colourNamesList(names string, colourAllocator func(s string) uint8) string 
 		sanitisedNick := strings.TrimLeftFunc(name, func(r rune) bool {
 			return !unicode.IsLetter(r)
 		})
-		index := colourAllocator(sanitisedNick)
+		index := ca.Allocate(sanitisedNick)
 		colouredName := aurora.Index(index, name).String()
 		colouredNames = append(colouredNames, colouredName)
 	}
@@ -68,24 +68,32 @@ func colourNamesList(names string, colourAllocator func(s string) uint8) string 
 	return strings.Join(colouredNames, " ")
 }
 
-func genColourAllocator(seed int) func(s string) uint8 {
-	m := make(map[string]uint8)
+type colourAllocator struct {
+	seed  int
+	cache map[string]uint8
+}
 
-	return func(s string) uint8 {
-		v, p := m[s]
-		if p {
-			return v
-		}
+func (c *colourAllocator) Allocate(s string) uint8 {
+	v, p := c.cache[s]
+	if p {
+		return v
+	}
 
-		sum := 0
-		for _, c := range s {
-			sum += int(c)
-		}
+	sum := 0
+	for _, c := range s {
+		sum += int(c)
+	}
 
-		rand.Seed(int64(seed + sum))
-		id := uint8(rand.Intn(6) + 1)
-		m[s] = id
-		return id
+	rand.Seed(int64(c.seed + sum))
+	id := uint8(rand.Intn(6) + 1)
+	c.cache[s] = id
+	return id
+}
+
+func createColourAllocator(i int) *colourAllocator {
+	return &colourAllocator{
+		seed:  i,
+		cache: make(map[string]uint8),
 	}
 }
 

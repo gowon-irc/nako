@@ -152,17 +152,17 @@ func TestColourNamesLi(t *testing.T) {
 		},
 	}
 
-	colourAllocator := genColourAllocator(1)
+	ca := createColourAllocator(1)
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := colourNamesList(tc.in, colourAllocator)
+			got := colourNamesList(tc.in, ca)
 			assert.Equal(t, tc.out, got)
 		})
 	}
 }
 
-func TestGenColourAllocator(t *testing.T) {
+func TestColourAllocator(t *testing.T) {
 	cases := []struct {
 		name string
 		in   int
@@ -187,11 +187,23 @@ func TestGenColourAllocator(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			colourAllocator := genColourAllocator(tc.in)
-			got := colourAllocator("nako")
-			assert.Equal(t, tc.out, got)
+			ca := createColourAllocator(tc.in)
+			out := ca.Allocate("nako")
+			assert.Equal(t, tc.out, out)
 		})
 	}
+}
+
+func TestColourAllocatorCache(t *testing.T) {
+	ca := createColourAllocator(1)
+
+	_, p := ca.cache["nako"]
+	assert.False(t, p)
+
+	_ = ca.Allocate("nako")
+
+	_, p = ca.cache["nako"]
+	assert.True(t, p)
 }
 
 func TestIrcToAnsiColours(t *testing.T) {

@@ -30,7 +30,7 @@ func genOnRecconnectingHandler(g *gocui.Gui) func(c mqtt.Client, opts *mqtt.Clie
 }
 
 func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) func(client mqtt.Client, msg mqtt.Message) {
-	colourAllocator := genColourAllocator(seed)
+	ca := createColourAllocator(seed)
 
 	return func(client mqtt.Client, msg mqtt.Message) {
 		m, err := gowon.CreateMessageStruct(msg.Payload())
@@ -44,7 +44,7 @@ func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) fu
 			return
 		}
 
-		id := colourAllocator(m.Nick)
+		id := ca.Allocate(m.Nick)
 		out := aurora.Index(id, fmt.Sprintf("%s: %s", m.Nick, m.Msg))
 
 		for _, h := range highlights {
@@ -73,7 +73,7 @@ func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) fu
 }
 
 func genRawMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqtt.Client, msg mqtt.Message) {
-	colourAllocator := genColourAllocator(seed)
+	ca := createColourAllocator(seed)
 
 	return func(client mqtt.Client, msg mqtt.Message) {
 		m, err := gowon.CreateMessageStruct(msg.Payload())
@@ -83,7 +83,7 @@ func genRawMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqt
 			return
 		}
 
-		id := colourAllocator(m.Nick)
+		id := ca.Allocate(m.Nick)
 
 		if m.Code == "JOIN" {
 			if len(channels) > 0 && !containsString(channels, m.Arguments[0]) {
@@ -109,7 +109,7 @@ func genRawMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqt
 				return
 			}
 
-			out := fmt.Sprintf("In %s are: %s", m.Arguments[2], colourNamesList(m.Arguments[3], colourAllocator))
+			out := fmt.Sprintf("In %s are: %s", m.Arguments[2], colourNamesList(m.Arguments[3], ca))
 			chatLogger(out, g)
 		}
 	}
