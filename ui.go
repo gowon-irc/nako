@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/awesome-gocui/gocui"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gowon-irc/go-gowon"
-	"github.com/logrusorgru/aurora"
 )
 
 func genLayout(channels []string) func(g *gocui.Gui) error {
@@ -66,30 +64,6 @@ func genLayout(channels []string) func(g *gocui.Gui) error {
 	}
 }
 
-func chatLogger(s string, g *gocui.Gui, tt ...string) {
-	var t string
-
-	if len(tt) == 0 {
-		now := time.Now()
-		t = now.Format("15:04")
-	} else {
-		t = tt[0]
-	}
-
-	ft := aurora.Bold(t).String()
-
-	g.Update(func(g *gocui.Gui) error {
-		v, err := g.View("chat")
-		if err != nil {
-			return err
-		}
-
-		fmt.Fprintln(v, ft, s)
-
-		return nil
-	})
-}
-
 func quit(g *gocui.Gui, v *gocui.View) error {
 	return gocui.ErrQuit
 }
@@ -120,7 +94,7 @@ func entryClear(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func genSendMessage(c mqtt.Client, module, topicRoot, channel string) func(g *gocui.Gui, v *gocui.View) error {
+func genSendMessage(c mqtt.Client, module, topicRoot, channel string, l *logger) func(g *gocui.Gui, v *gocui.View) error {
 	inputTopic := topicRoot + "/input"
 	outputTopic := topicRoot + "/output"
 	rawOutputTopic := topicRoot + "/raw/output"
@@ -174,7 +148,7 @@ func genSendMessage(c mqtt.Client, module, topicRoot, channel string) func(g *go
 
 		if strings.HasPrefix(b, "/") {
 			if !strings.HasPrefix(b, "//") {
-				chatLogger("command not recognised", g)
+				l.Log("command not recognised")
 				return nil
 			}
 			b = strings.TrimPrefix(b, "/")
@@ -189,7 +163,7 @@ func genSendMessage(c mqtt.Client, module, topicRoot, channel string) func(g *go
 
 		mj, err := json.Marshal(m)
 		if err != nil {
-			chatLogger(err.Error(), g)
+			l.Log(err.Error())
 			return err
 		}
 

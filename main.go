@@ -52,16 +52,19 @@ func main() {
 	mqttOpts.SetConnectRetryInterval(mqttConnectRetryInternal * time.Second)
 	mqttOpts.SetAutoReconnect(true)
 
-	mqttOpts.DefaultPublishHandler = genDefaultPublishHandler(g)
-	mqttOpts.OnConnectionLost = genOnConnectionLostHandler(g)
-	mqttOpts.OnReconnecting = genOnRecconnectingHandler(g)
+	loggerFunc := genChatViewLoggerFunc(g)
+	appLogger := createLogger(loggerFunc)
+
+	mqttOpts.DefaultPublishHandler = genDefaultPublishHandler(appLogger)
+	mqttOpts.OnConnectionLost = genOnConnectionLostHandler(appLogger)
+	mqttOpts.OnReconnecting = genOnRecconnectingHandler(appLogger)
 
 	colourAllocator := createColourAllocator(opts.ColourSeed)
-	privMsgHandler := genPrivMsgHandler(g, opts.Channels, opts.Highlights, colourAllocator)
-	rawMsgHandler := genRawMsgHandler(g, opts.Channels, colourAllocator)
-	mqttOpts.OnConnect = createOnConnectHandler(g, opts.TopicRoot, opts.Channels, privMsgHandler, rawMsgHandler)
+	privMsgHandler := genPrivMsgHandler(opts.Channels, opts.Highlights, colourAllocator, appLogger)
+	rawMsgHandler := genRawMsgHandler(opts.Channels, colourAllocator, appLogger)
+	mqttOpts.OnConnect = createOnConnectHandler(opts.TopicRoot, opts.Channels, privMsgHandler, rawMsgHandler, appLogger)
 
-	chatLogger("connecting to broker", g)
+	appLogger.Log("connecting to broker")
 
 	c := mqtt.NewClient(mqttOpts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
@@ -85,7 +88,7 @@ func main() {
 			log.Panicln(err)
 		}
 
-		sendMessage := genSendMessage(c, clientId, opts.TopicRoot, opts.Channels[0])
+		sendMessage := genSendMessage(c, clientId, opts.TopicRoot, opts.Channels[0], appLogger)
 		if err := g.SetKeybinding("entry", gocui.KeyEnter, gocui.ModNone, sendMessage); err != nil {
 			log.Panicln(err)
 		}

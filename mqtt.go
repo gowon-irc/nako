@@ -5,36 +5,35 @@ import (
 	"strings"
 	"time"
 
-	"github.com/awesome-gocui/gocui"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gowon-irc/go-gowon"
 	"github.com/logrusorgru/aurora"
 )
 
-func genDefaultPublishHandler(g *gocui.Gui) func(c mqtt.Client, msg mqtt.Message) {
+func genDefaultPublishHandler(l *logger) func(c mqtt.Client, msg mqtt.Message) {
 	return func(c mqtt.Client, msg mqtt.Message) {
-		chatLogger(fmt.Sprintf("unexpected message:  %s\n", msg), g)
+		l.Log(fmt.Sprintf("unexpected message:  %s\n", msg))
 	}
 }
 
-func genOnConnectionLostHandler(g *gocui.Gui) func(c mqtt.Client, err error) {
+func genOnConnectionLostHandler(l *logger) func(c mqtt.Client, err error) {
 	return func(c mqtt.Client, err error) {
-		chatLogger("connection to broker lost", g)
+		l.Log("connection to broker lost")
 	}
 }
 
-func genOnRecconnectingHandler(g *gocui.Gui) func(c mqtt.Client, opts *mqtt.ClientOptions) {
+func genOnRecconnectingHandler(l *logger) func(c mqtt.Client, opts *mqtt.ClientOptions) {
 	return func(c mqtt.Client, opts *mqtt.ClientOptions) {
-		chatLogger("attempting to reconnect to broker", g)
+		l.Log("attempting to reconnect to broker")
 	}
 }
 
-func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, ca *colourAllocator) func(client mqtt.Client, msg mqtt.Message) {
+func genPrivMsgHandler(channels, highlights []string, ca *colourAllocator, l *logger) func(client mqtt.Client, msg mqtt.Message) {
 	return func(client mqtt.Client, msg mqtt.Message) {
 		m, err := gowon.CreateMessageStruct(msg.Payload())
 
 		if err != nil {
-			chatLogger(err.Error(), g)
+			l.Log(err.Error())
 			return
 		}
 
@@ -56,26 +55,26 @@ func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, ca *colourAl
 		serverTime := m.Tags["time"]
 
 		if serverTime == "" {
-			chatLogger(output, g)
+			l.Log(output)
 			return
 		}
 
 		t, err := time.Parse("2006-01-02T15:04:05.000Z", serverTime)
 		if err != nil {
-			chatLogger(output, g)
+			l.Log(output)
 			return
 		}
 
-		chatLogger(output, g, t.Format("15:04"))
+		l.Log(output, t.Format("15:04"))
 	}
 }
 
-func genRawMsgHandler(g *gocui.Gui, channels []string, ca *colourAllocator) func(client mqtt.Client, msg mqtt.Message) {
+func genRawMsgHandler(channels []string, ca *colourAllocator, l *logger) func(client mqtt.Client, msg mqtt.Message) {
 	return func(client mqtt.Client, msg mqtt.Message) {
 		m, err := gowon.CreateMessageStruct(msg.Payload())
 
 		if err != nil && err.Error() != gowon.ErrorMessageNoBodyMsg {
-			chatLogger(err.Error(), g)
+			l.Log(err.Error())
 			return
 		}
 
@@ -87,7 +86,7 @@ func genRawMsgHandler(g *gocui.Gui, channels []string, ca *colourAllocator) func
 			}
 
 			out := aurora.Index(id, fmt.Sprintf("-> %s joined %s", m.Nick, m.Arguments[0])).String()
-			chatLogger(out, g)
+			l.Log(out)
 			return
 		}
 
@@ -97,7 +96,7 @@ func genRawMsgHandler(g *gocui.Gui, channels []string, ca *colourAllocator) func
 			}
 
 			out := fmt.Sprintf("topic for %s is: \"%s\"", m.Arguments[1], m.Arguments[2])
-			chatLogger(out, g)
+			l.Log(out)
 		}
 
 		if m.Code == "353" {
@@ -106,24 +105,24 @@ func genRawMsgHandler(g *gocui.Gui, channels []string, ca *colourAllocator) func
 			}
 
 			out := fmt.Sprintf("In %s are: %s", m.Arguments[2], colourNamesList(m.Arguments[3], ca))
-			chatLogger(out, g)
+			l.Log(out)
 		}
 	}
 }
 
-func createOnConnectHandler(g *gocui.Gui, topicRoot string, channels []string, pmh, rmh mqtt.MessageHandler) func(mqtt.Client) {
+func createOnConnectHandler(topicRoot string, channels []string, pmh, rmh mqtt.MessageHandler, l *logger) func(mqtt.Client) {
 	inputTopic := topicRoot + "/input"
 	rawInputTopic := topicRoot + "/raw/input"
 	rawOutputTopic := topicRoot + "/raw/output"
 
 	return func(client mqtt.Client) {
-		chatLogger("connected to broker", g)
+		l.Log("connected to broker")
 
 		client.Subscribe(inputTopic, 0, pmh)
-		chatLogger(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", inputTopic)), g)
+		l.Log(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", inputTopic)))
 
 		client.Subscribe(rawInputTopic, 0, rmh)
-		chatLogger(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", rawInputTopic)), g)
+		l.Log(fmt.Sprintf(fmt.Sprintf("Subscription to %s complete", rawInputTopic)))
 
 		client.Publish(rawOutputTopic, 0, false, fmt.Sprintf("JOIN %s", strings.Join(channels, ",")))
 
