@@ -29,9 +29,7 @@ func genOnRecconnectingHandler(g *gocui.Gui) func(c mqtt.Client, opts *mqtt.Clie
 	}
 }
 
-func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) func(client mqtt.Client, msg mqtt.Message) {
-	ca := createColourAllocator(seed)
-
+func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, ca *colourAllocator) func(client mqtt.Client, msg mqtt.Message) {
 	return func(client mqtt.Client, msg mqtt.Message) {
 		m, err := gowon.CreateMessageStruct(msg.Payload())
 
@@ -72,9 +70,7 @@ func genPrivMsgHandler(g *gocui.Gui, channels, highlights []string, seed int) fu
 	}
 }
 
-func genRawMsgHandler(g *gocui.Gui, channels []string, seed int) func(client mqtt.Client, msg mqtt.Message) {
-	ca := createColourAllocator(seed)
-
+func genRawMsgHandler(g *gocui.Gui, channels []string, ca *colourAllocator) func(client mqtt.Client, msg mqtt.Message) {
 	return func(client mqtt.Client, msg mqtt.Message) {
 		m, err := gowon.CreateMessageStruct(msg.Payload())
 

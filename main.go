@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"time"
 
@@ -44,8 +43,7 @@ func main() {
 	g.Highlight = true
 	g.SetManagerFunc(genLayout(opts.Channels))
 
-	rand.Seed(time.Now().UnixNano())
-	clientId := "nako_" + fmt.Sprint(rand.Int())
+	clientId := "nako_" + fmt.Sprint(os.Getpid())
 
 	mqttOpts := mqtt.NewClientOptions()
 	mqttOpts.AddBroker(fmt.Sprintf("tcp://%s", opts.Broker))
@@ -58,8 +56,9 @@ func main() {
 	mqttOpts.OnConnectionLost = genOnConnectionLostHandler(g)
 	mqttOpts.OnReconnecting = genOnRecconnectingHandler(g)
 
-	privMsgHandler := genPrivMsgHandler(g, opts.Channels, opts.Highlights, opts.ColourSeed)
-	rawMsgHandler := genRawMsgHandler(g, opts.Channels, opts.ColourSeed)
+	colourAllocator := createColourAllocator(opts.ColourSeed)
+	privMsgHandler := genPrivMsgHandler(g, opts.Channels, opts.Highlights, colourAllocator)
+	rawMsgHandler := genRawMsgHandler(g, opts.Channels, colourAllocator)
 	mqttOpts.OnConnect = createOnConnectHandler(g, opts.TopicRoot, opts.Channels, privMsgHandler, rawMsgHandler)
 
 	chatLogger("connecting to broker", g)
