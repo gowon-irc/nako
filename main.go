@@ -28,11 +28,15 @@ type Options struct {
 }
 
 func main() {
+	// Parse options
+
 	opts := Options{}
 	_, err := flags.Parse(&opts)
 	if err != nil {
 		os.Exit(1)
 	}
+
+	// Create gui
 
 	g, err := gocui.NewGui(gocui.OutputNormal, true)
 	if err != nil {
@@ -43,8 +47,14 @@ func main() {
 	g.Highlight = true
 	g.SetManagerFunc(genLayout(opts.Channels))
 
-	clientId := "nako_" + fmt.Sprint(os.Getpid())
+	// Setup application logger
 
+	loggerFunc := genChatViewLoggerFunc(g)
+	appLogger := createLogger(loggerFunc)
+
+	// Setup mqtt client
+
+	clientId := "nako_" + fmt.Sprint(os.Getpid())
 	mqttOpts := mqtt.NewClientOptions()
 	mqttOpts.AddBroker(fmt.Sprintf("tcp://%s", opts.Broker))
 	mqttOpts.SetClientID(clientId)
@@ -52,8 +62,7 @@ func main() {
 	mqttOpts.SetConnectRetryInterval(mqttConnectRetryInternal * time.Second)
 	mqttOpts.SetAutoReconnect(true)
 
-	loggerFunc := genChatViewLoggerFunc(g)
-	appLogger := createLogger(loggerFunc)
+	// Setup mqtt handlers
 
 	mqttOpts.DefaultPublishHandler = genDefaultPublishHandler(appLogger)
 	mqttOpts.OnConnectionLost = genOnConnectionLostHandler(appLogger)
@@ -64,12 +73,16 @@ func main() {
 	rawMsgHandler := genRawMsgHandler(opts.Channels, colourAllocator, appLogger)
 	mqttOpts.OnConnect = createOnConnectHandler(opts.TopicRoot, opts.Channels, privMsgHandler, rawMsgHandler, appLogger)
 
+	// Connect to mqtt broker
+
 	appLogger.Log("connecting to broker")
 
 	c := mqtt.NewClient(mqttOpts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
+
+	// Setup gui keybindings
 
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		log.Panicln(err)
@@ -109,6 +122,8 @@ func main() {
 	if err := g.SetKeybinding("chat", 'K', gocui.ModNone, genScrollX(-10)); err != nil {
 		log.Panicln(err)
 	}
+
+	// Start gui
 
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
